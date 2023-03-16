@@ -15,22 +15,23 @@ public class SearcherCsv implements Searcher {
   private final int column;
   private final String delimiterRow = ",";
   private final String filePath;
-  private final PrefixTree tree;
+  private final IndexStorage storage;
   private final boolean isNumericColumn;
   private long timeSpent;
 
   public SearcherCsv(int column, String filePath) {
     this.column = column;
     this.filePath = filePath;
-    tree = indexColumn(filePath);
+    storage = indexColumn(filePath);
     isNumericColumn = column == 1 || (column > 6 && column < 11);
   }
 
-  private PrefixTree indexColumn(String filePath) {
+  private IndexStorage indexColumn(String filePath) {
     if (column < 1 || column > 14) {
       throw new RuntimeException(ExceptionText.INVALID_COLUMN.getText());
     }
-    PrefixTree root = new PrefixTree(' ');
+    //IndexStorage newIndexStorage = new PrefixTree(' ');
+    IndexStorage newIndexStorage = new Dictionary();
 
     try (var bufferedReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(
         ClassLoader.getSystemResourceAsStream(filePath)), StandardCharsets.UTF_8))) {
@@ -38,18 +39,19 @@ public class SearcherCsv implements Searcher {
       var row = bufferedReader.readLine();
       while (row != null) {
         var rowsArray = row.split(delimiterRow);
-        root.insert(
+        newIndexStorage.insert(
             Integer.parseInt(rowsArray[0]),
-            rowsArray[column - 1].replaceAll("\"", "").trim().toUpperCase()
+            rowsArray[column - 1].replaceAll("\"", "").trim()
         );
         row = bufferedReader.readLine();
       }
-      return root;
+      return newIndexStorage;
     } catch (IOException e) {
       throw new RuntimeException(ExceptionText.READ_FILE_ERROR.getText(), e);
     }
   }
 
+  @Override
   public List<String> searchData(String searchTerm) {
     var startTime = System.nanoTime();
     var isNumericColumn = this.isNumericColumn;
@@ -58,7 +60,7 @@ public class SearcherCsv implements Searcher {
       isNumericColumn = checkNumeric(searchTerm);
     }
 
-    var keys = tree.getIdsFor(searchTerm.toUpperCase());
+    var keys = storage.getIdsFor(searchTerm);
 
     List<String> outputData = new ArrayList<>();
 
@@ -98,6 +100,7 @@ public class SearcherCsv implements Searcher {
     }
   }
 
+  @Override
   public long getTimeSpent() {
     return timeSpent;
   }

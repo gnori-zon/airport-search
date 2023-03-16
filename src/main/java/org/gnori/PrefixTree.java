@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class PrefixTree {
+public class PrefixTree implements IndexStorage {
 
   private Integer id;
   private final char value;
@@ -14,7 +14,9 @@ public class PrefixTree {
     this.value = value;
   }
 
+  @Override
   public void insert(int id, String data) {
+    data = data.toUpperCase();
     if (data.length() > 0) {
       if (children == null) {
         children = new ArrayList<>();
@@ -30,6 +32,34 @@ public class PrefixTree {
       }
       child.insert(id, data.substring(1));
     }
+  }
+
+  /* поиск всех id, для startString, если для какого-то символа startString узел не найден, то
+вернет пустой лист, иначе продолжит искать все Id у потомков узла последнего элемента строки*/
+  @Override
+  public List<Integer> getIdsFor(String startString) {
+    startString = startString.toUpperCase();
+    List<Integer> ids = new ArrayList<>();
+    var current = this;
+    // проверка на наличие строки в дереве
+    for (int i = 0; i < startString.length(); i++) {
+      current = current.findNodeByChar(startString.charAt(i));
+      if (current == null) {
+        return Collections.emptyList();
+      }
+    }
+    // добавление id текущего узла, если такой есть
+    if (id != null) {
+      ids.add(id);
+    }
+    // добавление id потомков
+    if (current.children != null) {
+      for (var child : current.children) {
+        child.getAllId(ids);
+      }
+    }
+    ids.sort(Integer::compareTo);
+    return ids;
   }
 
   private PrefixTree findNodeByChar(char c) {
@@ -54,29 +84,4 @@ public class PrefixTree {
     }
   }
 
-  /* поиск всех id, для startString, если для какого-то символа startString узел не найден, то
-вернет пустой лист, иначе продолжит искать все Id у потомков узла последнего элемента строки*/
-  public List<Integer> getIdsFor(String startString) {
-    List<Integer> ids = new ArrayList<>();
-    var current = this;
-    // проверка на наличие строки в дереве
-    for (int i = 0; i < startString.length(); i++) {
-      current = current.findNodeByChar(startString.charAt(i));
-      if (current == null) {
-        return Collections.emptyList();
-      }
-    }
-    // добавление id текущего узла, если такой есть
-    if (id != null) {
-      ids.add(id);
-    }
-    // добавление id потомков
-    if (current.children != null) {
-      for (var child : current.children) {
-        child.getAllId(ids);
-      }
-    }
-    ids.sort(Integer::compareTo);
-    return ids;
-  }
 }

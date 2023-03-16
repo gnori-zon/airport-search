@@ -16,9 +16,11 @@ public class Application {
       var input = scanner.nextLine().trim();
       if (END_COMMAND.equals(input)) {
         break;
-      } else {
+      } else if (!input.isEmpty()) {
         var foundData = reader.searchData(input);
         Printer.printFoundData(foundData, reader.getTimeSpent());
+        Printer.printReadyToSearchText();
+      } else {
         Printer.printReadyToSearchText();
       }
     }
